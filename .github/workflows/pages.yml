@@ -27,8 +27,8 @@ jobs:
           if ! grep -q 'fi-access.js' public/index.html; then
             sed -i 's#</body>#<script src="fi-access.js"></script></body>#' public/index.html
           fi
-          if ! grep -q 'org-enhancements.js' public/index.html; then
-            sed -i 's#</body>#<script src="org-enhancements.js"></script></body>#' public/index.html
+          if ! grep -q 'org-v2.js' public/index.html; then
+            sed -i 's#</body>#<script src="org-v2.js"></script></body>#' public/index.html
           fi
       - name: Configure Pages
         uses: actions/configure-pages@v5
