@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Load access workspaces and organization enhancements
         run: |
-          for script in fi-access.js org-v2.js settings-access.js operational-modules.js member-fix.js settings-smart.js unit-workspace.js com-training.js jkids.js member-relations.js attendance-family.js attendance-advanced.js; do
+          for script in fi-access.js org-v2.js settings-access.js operational-modules.js member-fix.js settings-smart.js unit-workspace.js com-training.js jkids.js member-relations.js attendance-family.js attendance-advanced.js attendance-pilotage.js; do
             if ! grep -q "$script" public/index.html; then
               sed -i "s#</body>#<script src=\"$script\"></script></body>#" public/index.html
             fi
