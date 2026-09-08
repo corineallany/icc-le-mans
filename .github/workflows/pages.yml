@@ -30,6 +30,9 @@ jobs:
           if ! grep -q 'org-v2.js' public/index.html; then
             sed -i 's#</body>#<script src="org-v2.js"></script></body>#' public/index.html
           fi
+          if ! grep -q 'settings-access.js' public/index.html; then
+            sed -i 's#</body>#<script src="settings-access.js"></script></body>#' public/index.html
+          fi
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
