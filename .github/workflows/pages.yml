@@ -36,6 +36,9 @@ jobs:
           if ! grep -q 'operational-modules.js' public/index.html; then
             sed -i 's#</body>#<script src="operational-modules.js"></script></body>#' public/index.html
           fi
+          if ! grep -q 'member-fix.js' public/index.html; then
+            sed -i 's#</body>#<script src="member-fix.js"></script></body>#' public/index.html
+          fi
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
