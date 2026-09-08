@@ -22,10 +22,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Load FI access workspace
+      - name: Load access workspaces and organization enhancements
         run: |
           if ! grep -q 'fi-access.js' public/index.html; then
             sed -i 's#</body>#<script src="fi-access.js"></script></body>#' public/index.html
+          fi
+          if ! grep -q 'org-enhancements.js' public/index.html; then
+            sed -i 's#</body>#<script src="org-enhancements.js"></script></body>#' public/index.html
           fi
       - name: Configure Pages
         uses: actions/configure-pages@v5
