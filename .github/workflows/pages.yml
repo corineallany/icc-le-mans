@@ -22,13 +22,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Load consolidated modular platform
+      - name: Load application modules
         run: |
-          # The legacy/base inline application must load first. The consolidated
-          # modules then wrap its functions (loadAll, loadUnits, openPanel, etc.).
-          # Loading them before the base app caused the portal facade wrapper to
-          # be overwritten, so users were sent straight to the old dashboard.
-          for script in platform-2026.js people-2026.js programs-2026.js notifications-2026.js governance-2026.js router-2026.js portals-2026.js; do
+          # The legacy/base inline application loads first. Each domain module
+          # is loaded once, then navigation.js owns the shell, portal context,
+          # burger menu and route isolation. No router/portal overlay is injected.
+          for script in platform-2026.js people-2026.js programs-2026.js notifications-2026.js governance-2026.js navigation.js; do
             if ! grep -q "src=\"$script\"" public/index.html; then
               sed -i "s#</body>#<script src=\"$script\"></script></body>#" public/index.html
             fi
