@@ -59,6 +59,7 @@ window.loadUnits=async function(){
 function ensureMembershipField(){
   if($('mChurchMembership'))return;const anchor=$('mFirst')?.closest('.field');if(!anchor)return;
   anchor.insertAdjacentHTML('beforebegin',`<div class="field full" id="mChurchMembership"><label>Appartenance à l’église</label><div class="check-grid"><label class="check-item"><input type="checkbox" id="mPortalICC"> ICC Le Mans</label><label class="check-item"><input type="checkbox" id="mPortalEJP"> Église des Jeunes Prodiges (EJP)</label></div><small class="muted">Choisissez ICC, EJP ou les deux. La fiche personne reste unique.</small></div>`);
+  if(!globalRole()){$('mPortalICC').disabled=true;$('mPortalEJP').disabled=true}
 }
 window.loadMemberPortalMembership=async id=>{
   ensureMembershipField();if(!$('mPortalICC')||!$('mPortalEJP'))return;$('mPortalICC').checked=!id;$('mPortalEJP').checked=false;if(!id)return;
@@ -68,9 +69,19 @@ window.loadMemberPortalMembership=async id=>{
 window.saveMemberPortalMembership=async id=>{
   ensureMembershipField();const wanted=[];if($('mPortalICC')?.checked)wanted.push(portalOfCode('ICC')?.id);if($('mPortalEJP')?.checked)wanted.push(portalOfCode('EJP')?.id);const clean=wanted.filter(Boolean);if(!clean.length)throw new Error('Choisissez ICC, EJP ou les deux.');
   const {data,error}=await db.from('member_church_affiliations').select('id,portal_id,active').eq('member_id',id);if(error)throw error;
-  for(const p of portals){const want=clean.includes(p.id),row=(data||[]).find(x=>x.portal_id===p.id);let q;if(row)q=await db.from('member_church_affiliations').update({active:want,ends_at:want?null:new Date().toISOString().slice(0,10),starts_at:want?(row.active?undefined:new Date().toISOString().slice(0,10)):undefined}).eq('id',row.id);else if(want)q=await db.from('member_church_affiliations').insert({member_id:id,portal_id:p.id,active:true,starts_at:new Date().toISOString().slice(0,10)});if(q?.error)throw q.error}
+  for(const p of portals){const want=clean.includes(p.id),row=(data||[]).find(x=>x.portal_id===p.id);let q;if(row)q=await db.from('member_church_affiliations').update({active:want,ends_at:want?null:new Date().toISOString().slice(0,10)}).eq('id',row.id);else if(want)q=await db.from('member_church_affiliations').insert({member_id:id,portal_id:p.id,active:true,starts_at:new Date().toISOString().slice(0,10)});if(q?.error)throw q.error}
+  await loadPortalData();
 };
 async function addMembershipBadge(id){const host=$('personDetail');if(!host)return;let box=$('memberPortalBlock');if(!box){box=document.createElement('div');box.id='memberPortalBlock';box.className='card';box.style.marginTop='14px';host.appendChild(box)}const ids=portalMemberships.get(id)||[];const labs=portals.filter(p=>ids.includes(p.id)).map(p=>p.code);box.innerHTML=`<h3>Appartenance d’église</h3><div class="info-row"><small>Périmètre</small><b>${E(labs.length===2?'ICC + EJP':labs[0]||'Non renseigné')}</b></div>`}
+
+const nativeRpc=db.rpc.bind(db);
+db.rpc=function(fn,args,opts){
+  if(fn==='save_member_record'&&args?.p_payload&&globalRole()){
+    const codes=[];if($('mPortalICC')?.checked)codes.push('ICC');if($('mPortalEJP')?.checked)codes.push('EJP');
+    if(codes.length)args={...args,p_payload:{...args.p_payload,church_codes:codes}};
+  }
+  return nativeRpc(fn,args,opts);
+};
 
 const baseOpenMember=window.openMemberModal;
 window.openMemberModal=async function(id=null){await Promise.resolve(baseOpenMember?.(id));if(!portals.length)await loadPortalData();await loadMemberPortalMembership(id)};
