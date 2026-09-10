@@ -24,9 +24,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Load application modules
         run: |
-          # The legacy/base inline application loads first. Each domain module
-          # is loaded once, then navigation.js owns the shell, portal context,
-          # burger menu and route isolation. No router/portal overlay is injected.
           for script in platform-2026.js people-2026.js programs-2026.js notifications-2026.js governance-2026.js navigation.js; do
             if ! grep -q "src=\"$script\"" public/index.html; then
               sed -i "s#</body>#<script src=\"$script\"></script></body>#" public/index.html
@@ -43,40 +40,16 @@ jobs:
         run: |
           set -euo pipefail
           api="https://api.github.com/repos/${{ github.repository }}/pages/deployments/$STALE_DEPLOYMENT"
-          code=$(curl -sS -o /tmp/cancel.out -w "%{http_code}" -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "X-GitHub-Api-Version: 2026-03-10" \
-            "$api/cancel" || true)
+          code=$(curl -sS -o /tmp/cancel.out -w "%{http_code}" -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" -H "X-GitHub-Api-Version: 2026-03-10" "$api/cancel" || true)
           echo "Cancel request HTTP $code"
           cat /tmp/cancel.out || true
-          if [ "$code" != "204" ] && [ "$code" != "404" ]; then
-            echo "Cancel request was not accepted"
-            exit 1
-          fi
+          if [ "$code" != "204" ] && [ "$code" != "404" ]; then exit 1; fi
           for i in $(seq 1 30); do
-            status_code=$(curl -sS -o /tmp/status.json -w "%{http_code}" \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer $GH_TOKEN" \
-              -H "X-GitHub-Api-Version: 2026-03-10" \
-              "$api" || true)
-            if [ "$status_code" = "404" ]; then
-              echo "Stale deployment no longer exists"
-              break
-            fi
-            status=$(python - <<'PY'
-import json
-try:
-    print(json.load(open('/tmp/status.json')).get('status',''))
-except Exception:
-    print('')
-PY
-)
+            status_code=$(curl -sS -o /tmp/status.json -w "%{http_code}" -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" -H "X-GitHub-Api-Version: 2026-03-10" "$api" || true)
+            if [ "$status_code" = "404" ]; then echo "Stale deployment cleared"; break; fi
+            status=$(python -c "import json; print(json.load(open('/tmp/status.json')).get('status',''))" 2>/dev/null || true)
             echo "Stale deployment status: ${status:-unknown}"
-            case "$status" in
-              in_progress|queued|pending|updating_pages|deployment_in_progress|'') sleep 2 ;;
-              *) break ;;
-            esac
+            case "$status" in in_progress|queued|pending|updating_pages|deployment_in_progress|'') sleep 2 ;; *) break ;; esac
           done
           sleep 3
       - name: Upload site
