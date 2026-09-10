@@ -24,9 +24,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Load consolidated modular platform
         run: |
-          if ! grep -q "platform-2026.js" public/index.html; then
-            sed -i 's#</body>#<script src="platform-2026.js"></script></body>#' public/index.html
-          fi
+          for script in platform-2026.js people-2026.js; do
+            if ! grep -q "$script" public/index.html; then
+              sed -i "s#</body>#<script src=\"$script\"></script></body>#" public/index.html
+            fi
+          done
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
