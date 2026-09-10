@@ -24,9 +24,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Load consolidated modular platform
         run: |
+          # The legacy/base inline application must load first. The consolidated
+          # modules then wrap its functions (loadAll, loadUnits, openPanel, etc.).
+          # Loading them before the base app caused the portal facade wrapper to
+          # be overwritten, so users were sent straight to the old dashboard.
           for script in platform-2026.js people-2026.js programs-2026.js notifications-2026.js governance-2026.js router-2026.js portals-2026.js; do
-            if ! grep -q "$script" public/index.html; then
-              sed -i "s#<script>#<script src=\"$script\"></script><script>#" public/index.html
+            if ! grep -q "src=\"$script\"" public/index.html; then
+              sed -i "s#</body>#<script src=\"$script\"></script></body>#" public/index.html
             fi
           done
       - name: Configure Pages
